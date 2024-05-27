@@ -45,7 +45,7 @@ tokenLine (x:xs)
     | x `elem` "=+-*/()^{};" = Operator x : tokenLine xs
     | x `elem` ['a'..'z'] || x `elem` ['A'..'Z'] = case parseVariable (x:xs) of
                                                         (var, rest) -> var : tokenLine rest
-    | otherwise = ErrorToken ("Expresión no reconocida: " ++ [x]) : tokenLine xs
+    | otherwise = ErrorToken ("El símbolo no existe: " ++ [x]) : tokenLine xs
 
 -- Function to process a file and check for the correct structure
 processFile :: String -> IO ()
@@ -53,29 +53,37 @@ processFile filename = do
     contents <- readFile filename
     let lines' = lines contents
     let tokens = concatMap tokenLine lines'
-    if validateProgramStructure tokens
-        then putStrLn "It is a program"
-        else putStrLn "This is not a program"
+    case findError tokens of
+        Just err -> putStrLn ("Syntax error: " ++ err)
+        Nothing -> case validateProgramStructure tokens of
+                      Right _ -> putStrLn "It is a program"
+                      Left err -> putStrLn ("Structure error: " ++ err)
+
+-- Function to find the first syntax error
+findError :: [Expression] -> Maybe String
+findError [] = Nothing
+findError (ErrorToken err : _) = Just err
+findError (_ : xs) = findError xs
 
 -- Function to validate the program structure
-validateProgramStructure :: [Expression] -> Bool
-validateProgramStructure tokens = 
+validateProgramStructure :: [Expression] -> Either String ()
+validateProgramStructure tokens =
     case tokens of
         (Variable "Programa" : Operator '{' : rest) -> validatePrincipalStructure rest 1
-        _ -> False
+        _ -> Left "Expected 'Programa {' at the beginning."
 
-validatePrincipalStructure :: [Expression] -> Int -> Bool
+validatePrincipalStructure :: [Expression] -> Int -> Either String ()
 validatePrincipalStructure (Variable "principal" : Operator '{' : rest) depth =
     validateBraces rest (depth + 1)
-validatePrincipalStructure _ _ = False
+validatePrincipalStructure _ _ = Left "Expected 'principal {' within 'Programa {'."
 
-validateBraces :: [Expression] -> Int -> Bool
-validateBraces [] 0 = True
+validateBraces :: [Expression] -> Int -> Either String ()
+validateBraces [] 0 = Right ()
 validateBraces (Operator '}' : rest) 1 = validateBraces rest 0
 validateBraces (Operator '}' : rest) depth = validateBraces rest (depth - 1)
 validateBraces (Operator '{' : rest) depth = validateBraces rest (depth + 1)
 validateBraces (_ : rest) depth = validateBraces rest depth
-validateBraces [] _ = False
+validateBraces [] _ = Left "Mismatched braces."
 
 -- Function to print the tokens of a line
 printTokens :: String -> IO ()
@@ -91,6 +99,8 @@ printTokenWithType token = print token
 -- Main function
 main :: IO ()
 main = processFile "Texts.txt"
+
+
 
 
 
