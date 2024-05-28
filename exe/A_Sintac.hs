@@ -1,20 +1,21 @@
+--Roxana Aranda A01613911
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
 
---Imports
-import System.IO (readFile) --to read file content
-import Data.Char (isDigit, isSpace) --for character checks
-import Data.List (span) --to split a list
-import GHC.Generics (Generic) --typeclass from GHC.Generics module
-import Data.Aeson (ToJSON, encode, object, (.=)) --For the tree json format
-import Data.Aeson.Encode.Pretty (encodePretty) --To make the tree more stylized
-import qualified Data.ByteString.Lazy.Char8 as BL --for handling lazy byte strings
-import System.Directory (doesFileExist) --to check file existence
+-- Imports
+import System.IO (readFile) -- to read file content
+import Data.Char (isDigit, isSpace) -- for character checks
+import Data.List (span) -- to split a list
+import GHC.Generics (Generic) -- typeclass from GHC.Generics module
+import Data.Aeson (ToJSON, encode, object, (.=)) -- for the tree json format
+import Data.Aeson.Encode.Pretty (encodePretty) -- to make the tree more stylized
+import qualified Data.ByteString.Lazy.Char8 as BL -- for handling lazy byte strings
+import System.Directory (doesFileExist) -- to check file existence
 
 -- Define a data structure for the derivation tree nodes
 data TreeNode = TreeNode {
     nodeLabel :: String, -- Label of the node in the tree
-    nodeChildren :: [TreeNode] ---- Children nodes of the current node
+    nodeChildren :: [TreeNode] -- Children nodes of the current node
 } deriving (Show, Generic) -- Deriving Generic and Show instances for TreeNode
 
 instance ToJSON TreeNode -- Making TreeNode an instance of ToJSON typeclass for JSON serialization
@@ -24,11 +25,11 @@ data Expression = NumberInt Int -- Integer number expression
                 | NumberFloat Float -- Floating-point number expression
                 | Operator Char -- Operator expression
                 | Variable String -- Variable expression
-                | SpecialSym Char --special symbol 
-                | Comment String --comment expression
-                | Programa --Programa token
-                | Principal --principal token
-                | ErrorToken String --error token
+                | SpecialSym Char -- Special symbol
+                | Comment String -- Comment expression
+                | Programa -- Programa token
+                | Principal -- Principal token
+                | ErrorToken String -- Error token
                 | Type String  -- Type token
                 deriving (Show) -- Deriving Show instance for Expression.
 
@@ -53,7 +54,6 @@ parseNumber s
                     [(n, rest)] -> (NumberInt n, rest)
                     -- If parsing fails, return ErrorToken
                     _ -> (ErrorToken ("Invalid Number: " ++ s), "")
-
 
 -- Function to parse variables (identifiers)
 parseVariable :: String -> (Expression, String)
@@ -92,9 +92,6 @@ tokenLine (x:xs)
     | otherwise = let (tokens, tree) = tokenLine xs
                   in (ErrorToken ("El símbolo no existe: " ++ [x]) : tokens, TreeNode ("Error: " ++ [x]) [tree])
 
-
-
-
 -- Function to process a file and check for the correct structure
 processFile :: String -> IO ()
 processFile filename = do
@@ -124,7 +121,6 @@ processFile filename = do
                                     BL.putStrLn $ encodePretty flatTree
                                 Left err -> putStrLn ("Structure error: " ++ err)
         else putStrLn $ "File not found: " ++ filename
-
 
 -- Function to find the first syntax error
 findError :: [Expression] -> Maybe String
@@ -161,10 +157,11 @@ validateBraces (_ : rest) depth = validateBraces rest depth
 -- If there are unmatched braces, return an error
 validateBraces [] _ = Left "Mismatched braces."
 
-
 -- Main function
 main :: IO ()
-main = processFile "Text.txt" --pass the file that contains the program
+main = processFile "Text.txt" -- pass the file that contains the program
+
+
 
 
 
